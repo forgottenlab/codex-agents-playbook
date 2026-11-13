@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Clarified template rendering, Codex instruction discovery, and instruction authority in both customization guides.
+- Distinguished installation profiles from task routing in both READMEs and recorded limited owner-observed runtime smoke checks in paired-workflow documentation.
 - Strict is now an entry plus explicitly loaded supporting modules, synchronized from installed rules.
 - Install and sanitize the full package; validate candidates before publishing and back up all replaced files.
 - Initialize with a no-write WhatIf path; retain unrelated local modules.

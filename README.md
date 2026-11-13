@@ -55,7 +55,9 @@ English is canonical for the installable Codex rules. User-facing explanations u
 | Standard | Most personal and open-source projects | Balanced safety and context |
 | Strict | Continuing, staged or recovery-sensitive work | More files and explicit module-reading duties |
 
-Strict now installs an entry and eight supporting files. Modules are **not automatically imported by Markdown links**: the entry tells Codex when to read them with a file-reading tool. Missing required modules stop dependent work. `INDEX.md` is for humans and is not a mandatory execution step.
+Minimal, Standard, and Strict are **alternative profiles selected at installation**, not concurrent or automatically switching modes. Direct Shell Mode and Codex Task Mode are **task-routing choices**, not profile names or UI modes.
+
+Strict installs an entry plus eight supporting files: **seven task-triggered rule modules** and a human-maintained `INDEX.md`. Modules are **not automatically imported by Markdown links**: the entry tells Codex when to read them with a file-reading tool. Missing required modules stop dependent work. `INDEX.md` is not a mandatory execution step.
 
 Workspace layout, Chinese explanations, the ChatGPT/Codex split, authorization markers, detailed history and the two-cycle repair budget in Strict are personal workflow choices. Review them before adopting them. Minimal and Standard retain their existing templates; they do not promise Strict's detailed routing and history rules.
 

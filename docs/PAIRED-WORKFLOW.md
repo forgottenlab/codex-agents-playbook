@@ -6,7 +6,7 @@
 
 This review compares the [source-derived ChatGPT companion](../chatgpt/custom-instructions.zh-CN.txt) with the [Strict entry](../profiles/strict/AGENTS.template.md) and its supporting modules. Minimal and Standard are lighter alternatives, not equivalent copies.
 
-The Codex source is the actual installed modular entry and its sibling modules, copied privately for publication. The ChatGPT source is the user-supplied local text file. File provenance does not establish which settings a live ChatGPT account currently has enabled. The task's owner explicitly approved publishing the modular Strict structure; the installed source remains untouched.
+The Codex source is the actual installed modular entry and its sibling modules, copied privately for publication. The ChatGPT source is the user-supplied local text file. File provenance does not establish which settings a live ChatGPT account currently has enabled. The owner explicitly approved publishing the modular Strict structure. Release preparation did not reinstall global rules; a later separately authorized local status correction changed entry metadata only, preserving the supporting modules.
 
 Generation normalizes the installed entry's stale candidate title and staging-only description, translates the human-only module index into English, replaces configured environment values, and normalizes line endings. The execution module's obsolete candidate-installation sentence becomes a general boundary against unrelated configuration changes. Strict also retains Minimal's existing prohibition on unauthorized history rewriting and branch deletion in its Git module, as required by profile inheritance. ChatGPT transformations remove presentation separators, heading markers and trailing presentation whitespace without changing its task rules. Private raw inputs are retained.
 
@@ -65,3 +65,12 @@ Manual scenarios used for the rule review:
 - A missing required module stops dependent execution rather than silently loading another copy.
 
 These scenarios were reviewed against the text; no model evaluation or live ChatGPT UI test was performed. They are not an automated semantic consistency proof. Review account-specific UI limits before pasting the companion and recheck facts when environment or model availability changes.
+
+## Limited runtime smoke checks (2026-11-13)
+
+The owner subsequently supplied Windows Codex session results for two narrow checks:
+
+- **Module access:** A fresh session located the effective global `AGENTS.md`, explicitly read the sibling `personal-rules/execution.md`, and reported the relevant Direct Shell / Codex Task boundaries with file locations and line ranges. This confirms that the module was readable when requested, not that every task automatically loads it.
+- **Natural Direct Shell response:** Without mentioning rules, the owner asked how to check the installed Git version. Codex returned the copyable PowerShell command `git --version` with an explanation; the observed reply did not initiate a repository audit or task-history write.
+
+These are owner-provided manual observations, not an automated model benchmark, an independent runtime trace, or a guarantee of future compliance. Live ChatGPT account behavior was not tested.

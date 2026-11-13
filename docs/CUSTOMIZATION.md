@@ -8,23 +8,17 @@
 - Use **standard** for most projects.
 - Use **strict** when task continuity, remote-operation boundaries, detailed `.ai` history, or UI-history recovery materially matters.
 
-## Override order
+## Rendering, discovery, and authority are different mechanisms
 
-A practical order is:
+Do not treat template rendering, instruction discovery, and instruction priority as one override chain.
 
-```text
-Public profile template
-        ↓
-Private machine values
-        ↓
-Repository-level AGENTS.md
-        ↓
-More deeply nested AGENTS.md
-        ↓
-Latest explicit task instruction
-```
+1. **Rendering (before installation):** Select one public profile and substitute private machine values from ignored local settings. Those values configure the generated file; they are not a higher-priority instruction layer.
+2. **Discovery (when Codex starts):** Codex reads applicable global and project instructions. Check the effective `CODEX_HOME` (or its default), any `AGENTS.override.md`, and the `AGENTS.md` files along the repository-to-working-directory path. More specific directory guidance can refine broader guidance; verify the files actually selected in a new session.
+3. **Authority (while executing):** Project instructions and user tasks operate within platform instruction and permission boundaries. A later task request does not automatically override higher-priority instructions, authorization limits, or safeguards.
 
-Do not use a machine-level rule to encode a project-specific exception that belongs in the repository.
+These profiles are **alternative installation choices**, not three simultaneously active modes. Direct Shell and Codex Task are task-routing decisions, not installation profiles. Under modular Strict, the entry must explicitly load relevant `personal-rules/` files; Markdown links alone do not import them.
+
+Do not use a global rule for a project-specific exception that belongs in the repository.
 
 ## Values to review
 
