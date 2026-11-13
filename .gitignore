@@ -15,3 +15,6 @@ Thumbs.db
 *.bak
 *.bak-*
 *.backup
+
+# Private task continuity
+.ai/

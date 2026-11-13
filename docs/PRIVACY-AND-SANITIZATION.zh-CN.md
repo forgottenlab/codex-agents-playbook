@@ -29,11 +29,15 @@
 ```text
 .local/user-settings.psd1
 .local/AGENTS.source.md
+.local/personal-rules/
+.local/chatgpt-custom-instructions.source.txt
 ```
 
 仓库通过 `.gitignore` 排除了 `.local/`。不要使用 `git add -f` 强制添加它。
 
 ## 4. 为自己的电脑生成配置
+
+只需初始化一次，检查并调整配置后，再执行第 5 节安装。如果 `.local/user-settings.psd1` 已存在，跳过初始化并保留原配置；不要仅为照做本指南而使用 `-Force`。
 
 交互式：
 
@@ -47,47 +51,39 @@ pwsh -NoProfile -File .\scripts\Initialize-LocalWorkspace.ps1
 pwsh -NoProfile -File .\scripts\Initialize-LocalWorkspace.ps1 `
   -WorkspaceRoot 'D:\Codex' `
   -GitHubUsername 'example-user' `
-  -PreferredLanguage 'Simplified Chinese' `
-  -Profile standard `
-  -InstallGlobal
+  -PreferredLanguage 'Simplified Chinese'
 ```
 
-## 5. 手动替换占位符的 PowerShell
+以上两个示例只在 `.local/` 中生成本机配置及私有 strict 源文件，不安装全局规则。全局档位在第 5 节选择。添加 `-InstallGlobal` 会立即调用同一个安装器安装；此处有意省略，避免重复安装。
 
-优先使用仓库安装脚本；需要手动操作时，可复制下面的命令：
+## 5. 配置占位符替换并安全安装
+
+使用正式安装器，不要直接写入全局文件。手动编辑第 4 节生成的 `.local/user-settings.psd1`；如果该文件不存在，可以根据 `examples/user-settings.example.psd1` 创建。保留已有本机配置。文件内容为 PowerShell 数据哈希表，例如：
 
 ```powershell
-$TemplatePath = '.\profiles\standard\AGENTS.template.md'
-$OutputPath = Join-Path $env:USERPROFILE '.codex\AGENTS.md'
-
-$WorkspaceRoot = 'D:\Codex'
-$Replacements = [ordered]@{
-    '{{WORKSPACE_ROOT}}'     = $WorkspaceRoot
-    '{{PROJECTS_DIR}}'       = Join-Path $WorkspaceRoot '01-Projects'
-    '{{AUTOMATIONS_DIR}}'    = Join-Path $WorkspaceRoot '02-Automations'
-    '{{SANDBOX_DIR}}'        = Join-Path $WorkspaceRoot '03-Sandbox'
-    '{{ARCHIVED_DIR}}'       = Join-Path $WorkspaceRoot '04-Archived'
-    '{{TEMPLATES_DIR}}'      = Join-Path $WorkspaceRoot '_templates'
-    '{{USER_PROFILE}}'       = $env:USERPROFILE
-    '{{GITHUB_USERNAME}}'    = 'example-user'
-    '{{PREFERRED_LANGUAGE}}' = 'Simplified Chinese'
+@{
+    WorkspaceRoot      = 'D:\Codex'
+    ProjectsDir        = 'D:\Codex\01-Projects'
+    AutomationsDir     = 'D:\Codex\02-Automations'
+    SandboxDir         = 'D:\Codex\03-Sandbox'
+    ArchivedDir        = 'D:\Codex\04-Archived'
+    TemplatesDir       = 'D:\Codex\_templates'
+    GitHubUsername     = 'example-user'
+    PreferredLanguage  = 'Simplified Chinese'
 }
-
-$Content = Get-Content -LiteralPath $TemplatePath -Raw
-foreach ($Entry in $Replacements.GetEnumerator()) {
-    $Content = $Content.Replace($Entry.Key, [string]$Entry.Value)
-}
-
-$Unresolved = [regex]::Matches($Content, '\{\{[A-Z0-9_]+\}\}') |
-    ForEach-Object Value |
-    Sort-Object -Unique
-if ($Unresolved) {
-    throw "仍有未替换占位符：$($Unresolved -join ', ')"
-}
-
-New-Item -ItemType Directory -Path (Split-Path -Parent $OutputPath) -Force | Out-Null
-Set-Content -LiteralPath $OutputPath -Value $Content -Encoding utf8
 ```
+
+将示例路径、GitHub 身份和语言替换为自己的值。各目录可以独立配置；省略或留空的目录设置会根据 `WorkspaceRoot` 推导。`WorkspaceRoot`、`GitHubUsername` 和 `PreferredLanguage` 必须存在且非空。安装器从 `$env:USERPROFILE` 获取 `{{USER_PROFILE}}` 的值。私人值应保存在 `.local/`，不要写入已提交的模板。
+
+在仓库根目录运行：
+
+```powershell
+pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
+  -Profile standard `
+  -SettingsPath .\.local\user-settings.psd1
+```
+
+默认目标为 `%USERPROFILE%\.codex\AGENTS.md`。其他位置通过 `-TargetPath` 指定包含父目录的路径。安装器在修改目标前验证完整渲染文件包，拒绝残留占位符。Strict 安装入口及同级 `personal-rules/` 下八份配套文件。所有将被替换的已有文件先使用同一个“时间戳加随机后缀”备份，备份失败则终止安装，其他文件保留。写入按顺序进行，不具备事务性；应将受影响入口与模块的备份一起保留，安装中断后恢复该组文件。避免并发安装，不要绕过正式流程直接覆盖。
 
 ## 6. 从本机源文件生成公开快照
 
@@ -115,3 +111,33 @@ git diff --cached
 - 提示词中的授权标记不是操作系统权限，也不是 Codex 沙箱；
 - 本机路径通常不等于密钥，但它属于环境信息，不应强加给其他用户；
 - 高风险仓库仍应人工检查，并使用专门的 Secret Scanner。
+
+## 9. 模块化与 ChatGPT 发布审查
+
+已安装入口及配套模块只是来源输入，准备发布时不要覆盖实际全局文件。
+核对已有忽略源文件前先备份；若私有源和配置原本不存在，应记录事实并基于
+已核验输入建立它们，不能声称已备份一个原本不存在的源文件。
+
+模块化快照相对于私有入口读取每个必需模块，替换已配置值，规范化过时的候选
+及暂存元数据，并将人工索引译为英文。同时在 Strict Git 模块保留 Minimal
+明确禁止未授权历史重写和分支删除的规则。这是有限的档位继承保护，
+不修改实际安装来源。审查全部生成模块，不要只看入口。
+
+从实际提供的文本生成配套指令：
+
+```powershell
+pwsh -NoProfile -File .\scripts\New-PublicSnapshot.ps1 -Kind ChatGPT
+```
+
+没有来源就不生成配套指令。生成器去除排版分隔线及标题标记，保留来源语言，
+按本次 5,000 字符预算检查，并在替换公开输出前拒绝空文本、超长内容、
+敏感格式及残留占位符。
+
+扫描器支持内存候选内容，以便在写入前检查。公开扫描排除被忽略的
+`.local/` 和 `.ai/`，本地任务证据不得公开。检查 `git ls-files .local .ai`
+及暂存差异：若忽略目录已被误跟踪，仍应阻止发布。另行人工审阅姓名、
+用户目录、私有项目引用、主机、邮箱及私有链接，字面量和正则扫描并不完整。
+
+只有源自实际输入的指令产物、经过审阅的工具及文档属于候选发布文件。
+公开项目地址有意代表本项目，不应作为下游用户身份。实时账户设置及私有
+执行记录不是发布产物。参见[配套一致性检查](PAIRED-WORKFLOW.zh-CN.md)。

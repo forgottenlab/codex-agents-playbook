@@ -73,12 +73,15 @@ if ($PSCmdlet.ShouldProcess($SettingsPath, 'Create private local settings')) {
     Write-Host "Private settings created: $SettingsPath"
 }
 
+if ($WhatIfPreference) { Write-Host 'WhatIf: private sources and global instructions were not written.'; return }
+
 $Installer = Join-Path $PSScriptRoot 'Install-CodexAgents.ps1'
 & $Installer -Profile 'strict' -SettingsPath $SettingsPath -TargetPath $LocalSourcePath -Force:$Force
 
 # Mark the generated strict source as private/local while keeping publication reversible.
 $LocalContent = Get-Content -LiteralPath $LocalSourcePath -Raw
-$LocalContent = $LocalContent.Replace('Strict Profile Template', 'Strict Local Profile')
+$LocalContent = $LocalContent.Replace('# Personal Codex Rules — Modular Entry v2', '# Codex AGENTS Playbook — Strict Local Profile')
+$LocalContent = $LocalContent.Replace('Active global Codex instructions. Read the relevant sibling personal-rules modules according to the routing table below.', 'Private generation source for the Strict profile; this file is not necessarily the installed global entry. Generate a sanitized public snapshot before distribution.')
 $PublicPolicyPattern = 'This template intentionally uses documented placeholders for machine-specific paths and\r?\npreferences\. Render it through the installation script before using it as a global Codex\r?\ninstruction file\. Do not replace placeholders in the committed template with private values\.'
 $PrivatePolicy = "This local file may contain machine-specific paths and preferences. It is a private`noperational source and must not be committed directly to a public repository. Generate a`npublic snapshot through the repository sanitization script, then run the public-safety scan."
 $LocalContent = [regex]::Replace($LocalContent, $PublicPolicyPattern, $PrivatePolicy)

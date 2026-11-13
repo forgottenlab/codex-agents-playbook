@@ -1,217 +1,188 @@
 # Codex AGENTS Playbook
 
-> 一套面向 Codex 的安全优先、证据驱动 `AGENTS.md` 配置集，包含可复用规则档位、隐私友好的公开流程与本地安装脚本。
+> 一套可复用的 Codex 规则档位及源自实际输入的 ChatGPT 配套指令，用于范围明确、有证据可审查的工程工作流。
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> 本项目来自真实开发经验，并非 OpenAI 官方项目，也不是操作系统级安全边界。任何规则和脚本都不能替代用户对实际命令、代码差异及运行环境的审查。
+> 本项目由社区维护，带有明确的个人工作流取舍，并非 OpenAI 官方项目。指令不提供安全沙箱，不能替代命令审查、平台权限和备份。
 
 ## ✨ 为什么创建这个项目
 
-Codex 可以借助 `AGENTS.md` 理解如何检查仓库、运行哪些命令以及遵循哪些项目规范。因此，一套真正有用的规则不能只规定回答语气，还应明确任务范围、Git 安全、测试证据、隐私保护、持久上下文和最终交接方式。
+ChatGPT 准备边界明确的任务；Codex 检查实际检出目录、执行任务，再返回证据供审查。职责分离可以区分方案和仓库事实，避免把简单命令扩展成智能体流程，并让后续工作更容易审查。
 
-本项目把这些要求整理成三个可复用档位，并采用“两层发布”流程：
+这些是工作流职责，不改变平台指令优先级。Codex 仍可规划完成已授权任务所需的本地执行步骤。
 
-```text
-本机私有源文件
-      ↓  脱敏并验证
-公开规则模板
-      ↓  配置并渲染
-用户实际安装的 AGENTS.md
-```
+## 🤝 ChatGPT / Codex 配套工作流
 
-它不是所谓的“万能提示词”，而是一套有明确取舍的工程执行手册，目标是让智能体辅助开发更有边界、可审查、有证据并且能够恢复。
+| 系统 | 负责内容 |
+|---|---|
+| ChatGPT | 准确性、对话边界、Direct Shell / Codex 路由、架构讨论、模型与推理强度建议、Prompt 设计、跨会话规划和结果审查 |
+| Codex | 仓库检查、有限修改、上下文相关命令、工作树保护、测试、项目事实隔离和简洁事实交接 |
+
+少量确定性命令通常使用 Direct Shell Mode，提供可复制命令、用途和预期结果。依赖仓库的调查、修改、工作树保护及测试闭环使用 Codex Task Mode。若拆分会损害安全性或复现性，审计中的简单命令仍可由 Codex 一起执行。
+
+模型和 Reasoning 建议必须放在**可复制执行 Prompt 之外**。它们由用户在界面选择，Prompt 不要求 Codex 自行切换模型。
+
+详见[配套工作流与 12 项一致性检查](docs/PAIRED-WORKFLOW.zh-CN.md)。
 
 ## 🚀 当前包含的内容
 
 | 组件 | 用途 |
 |---|---|
-| `profiles/minimal` | 最基本的范围、敏感信息、Git、验证与交接保护 |
-| `profiles/standard` | 推荐默认档，增加工作区、远程操作、文档及紧凑 `.ai` 规范 |
-| `profiles/strict` | 完整档，增加授权标记、详细上下文治理、任务历史及界面历史恢复 |
-| `scripts/Initialize-LocalWorkspace.ps1` | 创建被忽略的本机配置和可直接使用的私有源文件 |
-| `scripts/Install-CodexAgents.ps1` | 渲染所选档位，备份旧文件后安装 |
-| `scripts/New-PublicSnapshot.ps1` | 将本机严格版源文件转换为脱敏的公开模板 |
-| `scripts/Test-PublicSafety.ps1` | 检查公开文件中是否残留已配置的私人值或常见凭据格式 |
-| `scripts/Test-PowerShellSyntax.ps1` | 在不执行脚本的情况下解析全部 PowerShell 文件 |
-| `scripts/Test-Repository.ps1` | 统一运行语法检查与公开安全检查 |
-| `scripts/Bootstrap-CodexAgents.ps1` | 克隆或更新仓库，再调用可见的本地安装脚本 |
-| `.local/` | 仅本机使用的私有配置与源文件，绝不能提交 |
+| `profiles/minimal` | 基本范围、隐私、Git、验证与交接保护 |
+| `profiles/standard` | 推荐默认档，增加工作区、远程操作、文档及紧凑上下文规范 |
+| `profiles/strict` | 模块化入口及 `personal-rules/`，覆盖路由、Git 审查、验证、上下文、历史、恢复和交接 |
+| `chatgpt/custom-instructions.zh-CN.txt` | 从用户提供的 ChatGPT 源文件生成，可直接复制的纯指令 |
+| `scripts/Initialize-LocalWorkspace.ps1` | 创建被忽略的私有配置及渲染后的 Strict 源文件包 |
+| `scripts/Install-CodexAgents.ps1` | 渲染档位，在替换前备份每个已存在的目标文件 |
+| `scripts/New-PublicSnapshot.ps1` | 对 Strict 或 ChatGPT 私有输入脱敏，先检查全部候选内容再写入 |
+| `scripts/Test-Repository.ps1` | 运行语法、隐私、产物与隔离工作流检查 |
+| `scripts/Bootstrap-CodexAgents.ps1` | 可见的克隆、更新及初始化流程，不使用下载后直接执行的管道 |
+| `.local/` 与 `.ai/` | 被忽略的私有输入、测试夹具和本地执行记录 |
 
-## 🌐 为什么核心规则使用英文
+仓库根目录的 `AGENTS.md` 用于维护本仓库。供用户安装的规则位于 `profiles/`。
 
-可安装的规则层使用英文，是因为命令、路径、API 标识符、Git 术语、错误信息和上游工程文档主要使用英文。只维护一份英文核心规则，可以减少中英文混排歧义和双版本漂移；中文文档负责解释设计原因和使用流程。
+## 🌐 规则语言
 
-这并不意味着英文天然能让模型表现更好。相比语言本身，明确的权限层级、有限范围、具体约束和可验证检查通常更重要。
+可安装的 Codex 规则以英文为准，面向用户的解释使用配置语言。ChatGPT 配套指令保留实际源文件的简体中文。中英文文档说明相同的安装方法和边界；语言本身不保证模型可靠执行。
 
-## 🧭 三种规则档位
+## 🧭 档位与个人取舍
 
 | 档位 | 适合场景 | 主要代价 |
 |---|---|---|
-| Minimal | 小仓库、实验、短任务 | 开销最低，但连续性能力有限 |
-| Standard | 大多数个人项目和开源项目 | 安全、上下文与效率较平衡 |
-| Strict | 长期、风险较高、多阶段或特别依赖恢复的任务 | 文件、流程和上下文开销更大 |
+| Minimal | 小仓库、短任务 | 流程最少，连续性有限 |
+| Standard | 大多数个人和开源项目 | 安全与上下文较平衡 |
+| Strict | 持续、多阶段或依赖恢复的工作 | 文件更多，需明确按条件读取模块 |
 
-仓库根目录的 `AGENTS.md` 是维护本仓库时使用的规则；真正供用户安装的模板位于 `profiles/`。
+Strict 现在安装一个入口及八份配套文件。Markdown 链接**不会自动导入模块**：入口要求 Codex 在对应场景用文件读取工具加载。必需模块缺失时停止依赖它的工作。`INDEX.md` 供人工维护，不是执行前置步骤。
 
-## 📦 克隆后的快速使用
+工作区布局、中文解释、ChatGPT/Codex 分工、授权标记、详细历史，以及 Strict 的两轮自动修复预算，都是个人工作流选择，采用前应审阅。Minimal / Standard 保留原有模板，不承诺提供 Strict 的详细路由和历史规则。
 
-要求：
+## 📦 安装 Codex 档位
 
-- Git
-- PowerShell 7.2 或更高版本
+要求 Git、PowerShell 7.2 或更高版本。本轮检查使用 PowerShell 7.6.3，未单独验证最低版本。
 
 ```powershell
 git clone https://github.com/forgottenlab/codex-agents-playbook.git
 Set-Location .\codex-agents-playbook
-
 pwsh -NoProfile -File .\scripts\Initialize-LocalWorkspace.ps1
 ```
 
-初始化脚本会询问本机相关信息，只把真实值写入 Git 已忽略的 `.local/` 目录，生成本机严格版源文件，并可选择立即安装某个档位。
+只需初始化一次。如果 `.local/user-settings.psd1` 已存在，应检查并保留，不要仅为照做指南而添加 `-Force`。初始化只创建私有输入，除非明确提供 `-InstallGlobal`，否则不安装全局规则。
 
-稍后单独安装：
+检查配置中的路径、身份和语言，再预览并安装：
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
-  -Profile standard `
-  -SettingsPath .\.local\user-settings.psd1
+  -Profile strict -SettingsPath .\.local\user-settings.psd1 -WhatIf
+
+pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
+  -Profile strict -SettingsPath .\.local\user-settings.psd1
 ```
 
-默认安装位置：
+推荐较轻的默认档可选择 `standard`。默认目标是 `%USERPROFILE%\.codex\AGENTS.md`；通过 `-TargetPath` 指向其他 Codex home 或本地预览路径。Strict 的模块安装在目标文件旁的 `personal-rules/`。不要只复制 Strict 入口。
+
+所有将被替换的已有文件使用同一个“时间戳加随机后缀”备份，其他文件保留。安装由连续写入组成，不具备事务性；若中断，先检查备份，将受影响入口与模块作为一组恢复，再重试。
+
+检查已有 `AGENTS.override.md` 及自定义 `CODEX_HOME`，它们会影响实际读取哪个全局文件。安装后启动新的 Codex 会话，核验有效指令来源。参见[官方指令发现说明](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
+
+## 💬 复制 ChatGPT 指令
+
+打开 [custom-instructions.zh-CN.txt](chatgpt/custom-instructions.zh-CN.txt)，全选文件内容并粘贴到 ChatGPT 自定义指令字段。只复制文件正文；文件没有外围说明或代码围栏。
+
+生成器按本次发布的 5,000 字符预算检查，使用包含空白的保守 UTF-16 计数。实际源文件留有余量。请核验自己账户提供的字段；本仓库不测试实时 ChatGPT 界面，也不修改账户设置。
+
+保存前审阅语言、工作流及模型选择建议。配套指令使用能力类别，不固定某一时点的模型目录。
+
+## 🔐 私有源文件到公开快照
 
 ```text
-%USERPROFILE%\.codex\AGENTS.md
+已安装或本机 Codex 指令                    用户提供的 ChatGPT 指令
+             ↓ 私下复制、核对                         ↓
+.local/AGENTS.source.md + personal-rules/    .local/chatgpt-custom-instructions.source.txt
+             ↓ 脱敏并审查                             ↓
+profiles/strict/ 入口及模块                  chatgpt/custom-instructions.zh-CN.txt
+             ↓ 渲染
+用户自己的 Codex 本机安装
 ```
 
-如果旧文件已存在，脚本会先生成带时间戳的备份。
-
-## 🔐 本机私有源文件与公开快照
-
-真实路径和个人偏好只应存在于：
-
-```text
-.local/user-settings.psd1
-.local/AGENTS.source.md
-```
-
-这两个文件均被 Git 忽略。**绝对不要使用 `git add -f` 强制提交 `.local/`。**
-
-有意修改本机严格版源文件后，运行：
+真实环境值放在 `.local/user-settings.psd1`。核对已有私有源文件前先备份。已安装入口和模块应**一起复制并审阅**；初始化只渲染公开模板，不会发现已安装文件中的改动。
 
 ```powershell
 pwsh -NoProfile -File .\scripts\New-PublicSnapshot.ps1
-pwsh -NoProfile -File .\scripts\Test-PublicSafety.ps1
-```
-
-随后检查实际差异：
-
-```powershell
-git status --short
-git diff -- profiles/strict/AGENTS.template.md
+pwsh -NoProfile -File .\scripts\New-PublicSnapshot.ps1 -Kind ChatGPT
+pwsh -NoProfile -File .\scripts\Test-Repository.ps1
 git diff --check
+git status --short
+git diff
+git diff --cached
 ```
 
-完整占位符说明、手动替换命令和发布前检查见 [隐私与脱敏说明](docs/PRIVACY-AND-SANITIZATION.zh-CN.md)。
+ChatGPT 输入缺失或为空时，生成失败并保留原公开输出。生成器只去除排版分隔线及 Markdown 标题标记、统一换行并替换已配置的私人值，不会编造当前指令。如果脱敏后可复制文本中仍有占位符，将停止并要求人工审阅。
 
-## 🧩 必须由用户替换的占位符
+转换边界及私有源流程见[隐私与脱敏说明](docs/PRIVACY-AND-SANITIZATION.zh-CN.md)。
 
-| 占位符 | 应替换为 |
+## 🧩 定制与占位符
+
+| 占位符 | 配置内容 |
 |---|---|
-| `{{WORKSPACE_ROOT}}` | 用户自己的 Codex 工作区根目录 |
-| `{{PROJECTS_DIR}}` | 长期项目目录 |
-| `{{AUTOMATIONS_DIR}}` | 自动化项目目录 |
-| `{{SANDBOX_DIR}}` | 临时实验目录 |
-| `{{ARCHIVED_DIR}}` | 归档项目目录 |
-| `{{TEMPLATES_DIR}}` | 模板目录 |
-| `{{USER_PROFILE}}` | 当前操作系统用户目录 |
-| `{{GITHUB_USERNAME}}` | GitHub 用户名或组织名 |
-| `{{PREFERRED_LANGUAGE}}` | 面向用户解释时使用的语言 |
+| `{{WORKSPACE_ROOT}}` | 工作区根目录 |
+| `{{PROJECTS_DIR}}` | 长期项目 |
+| `{{AUTOMATIONS_DIR}}` | 持久自动化 |
+| `{{SANDBOX_DIR}}` | 临时实验 |
+| `{{ARCHIVED_DIR}}` | 归档 |
+| `{{TEMPLATES_DIR}}` | 可复用模板 |
+| `{{USER_PROFILE}}` | 安装器提供的当前操作系统用户目录 |
+| `{{GITHUB_USERNAME}}` | 模板使用时的 GitHub 身份 |
+| `{{PREFERRED_LANGUAGE}}` | 面向用户解释的语言 |
 
-仓库中的模板应当保留这些占位符；安装到本机的最终文件则不能残留任何占位符。
+从[配置示例](examples/user-settings.example.psd1)开始，在私有配置中填写自己的值。公开 Codex 模板保留占位符，渲染到本机后不应残留。公开仓库地址有意保留本项目身份，下游 fork 应审阅。参见[定制指南](docs/CUSTOMIZATION.zh-CN.md)。
 
-## ⚡ 为当前目录直接生成本机配置
+## 🛡️ 授权与隐私边界
 
-例如将工作区根目录设置为 `D:\Codex`：
+Strict 的 `ALLOW_REMOTE_READONLY=true`、`ALLOW_REMOTE_VALIDATE=true`、`ALLOW_DEPLOY=true` 和 `ALLOW_SECRET_FILE_MOVE=true` 都是任务策略信号，不会授予系统权限、验证账户或覆盖平台控制。每个标记只适用于它声明的范围。
 
-```powershell
-pwsh -NoProfile -File .\scripts\Initialize-LocalWorkspace.ps1 `
-  -WorkspaceRoot 'D:\Codex' `
-  -GitHubUsername 'forgottenlab' `
-  -PreferredLanguage 'Simplified Chinese' `
-  -Profile strict `
-  -InstallGlobal
-```
+不要公开 `.local/`、`.ai/`、渲染后的私人文件、凭据、会话文件或私有执行记录。正则扫描不能证明没有个人信息，仍需独立检查姓名、路径、主机、邮箱、项目引用和链接。
 
-脚本会自动推导：
-
-```text
-D:\Codex\01-Projects
-D:\Codex\02-Automations
-D:\Codex\03-Sandbox
-D:\Codex\04-Archived
-D:\Codex\_templates
-```
-
-这些真实值仅进入 `.local/` 和本机安装文件，不应进入公开提交。
-
-## 🛡️ 授权标记不是安全沙箱
-
-严格档中的 `ALLOW_DEPLOY=true` 等标记只是任务级、提示词层面的可见授权信号。它们不会授予操作系统权限、绕过 Codex 沙箱、验证用户身份，也不能自动证明命令安全。仍须审查实际命令、平台权限和用户最新的明确指令。
-
-## 🧪 发布前验证
-
-只要修改了规则模板、脚本、示例或隐私文档，提交前都应运行：
+## 🧪 验证
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Test-Repository.ps1
 ```
 
-仓库测试会先解析全部 PowerShell 脚本，再运行公开安全检查。当 `.local/user-settings.psd1` 存在时，脚本会检查公开文件中是否残留其中记录的真实值；同时也会检查常见私钥和凭据格式。它只是额外防线，不能替代专业的密钥扫描和人工审查。
+验证套件解析 `.ps1` / `.psm1`，扫描公开文件，检查已记录占位符、配套模块、ChatGPT 长度和相对文件链接，然后在被忽略的 `.local/validation-*` 中验证安装与生成流程。测试夹具保留供审查。测试不会安装实际全局规则或访问远程服务。
+
+一致性结论是记录在[配套工作流](docs/PAIRED-WORKFLOW.zh-CN.md)中的人工判断，自动检查不能证明模型遵守规则。外部链接可用性、ChatGPT 界面行为、安装中断恢复和所有文件系统故障场景未做集成测试。
 
 ## 🧱 仓库结构
 
 ```text
 codex-agents-playbook/
-├─ AGENTS.md
-├─ README.md
-├─ README.zh-CN.md
-├─ LICENSE
-├─ CHANGELOG.md
-├─ SECURITY.md
-├─ CONTRIBUTING.md
+├─ AGENTS.md                     # 仓库维护规则
+├─ README.md / README.zh-CN.md
 ├─ profiles/
 │  ├─ minimal/AGENTS.template.md
 │  ├─ standard/AGENTS.template.md
-│  └─ strict/AGENTS.template.md
+│  └─ strict/
+│     ├─ AGENTS.template.md
+│     └─ personal-rules/
+├─ chatgpt/custom-instructions.zh-CN.txt
 ├─ scripts/
 ├─ examples/
 ├─ docs/
-└─ .local/                 # Git 忽略，仅本机私有
+├─ .local/                       # 忽略的私有源和测试夹具
+└─ .ai/                          # 忽略的本地连续性记录
 ```
 
 ## 🗺️ 后续路线
 
-- 为三个档位增加基于场景的行为测试；
-- 增加 macOS 和 Linux 渲染、安装脚本；
-- 提供带校验和的版本化 Bootstrap 发布；
-- 探索规则片段组合，减少完整文件重复；
-- 通过 CI 检查占位符、Markdown 链接和敏感字面量；
-- 为已安装的本机规则提供版本化迁移说明。
-
-路线图只是建议方向，不代表已经实现或承诺交付。
+基于场景的模型行为检查、macOS/Linux 安装器、版本化 Bootstrap 校验和及迁移工具，仍属于可能的后续工作。路线图不授权实现。
 
 ## 🤝 参与贡献
 
-高质量规则修改应说明：真实失败模式、受影响环境、建议措辞、可能代价以及验证方法。不要仅仅因为一条规则“看起来更严格”就加入；每条规则都会占用上下文并降低灵活性。
-
-提交修改前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+参见 [CONTRIBUTING.md](CONTRIBUTING.md)。规则修改应说明观察到的失败模式、成本及验证方式。保持范围聚焦，审查公开差异后只暂存明确文件。
 
 ## 📜 许可证
 
 MIT License，详见 [LICENSE](LICENSE)。
-
-## 🙏 项目来源
-
-这套工作流来自 ChatGPT 与 Codex 在本地开发、自动化、文档、Git、测试和长期项目恢复中的反复实践。

@@ -1,18 +1,20 @@
 [CmdletBinding()]
 param(
     [string]$Path,
-    [string]$SettingsPath
+    [string]$SettingsPath,
+    [AllowEmptyString()] [string]$Content
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
+$ScanContent = $PSBoundParameters.ContainsKey('Content')
 if ([string]::IsNullOrWhiteSpace($Path)) {
     $Path = $RepoRoot
 }
 
-if (-not (Test-Path -LiteralPath $Path)) {
+if (-not $ScanContent -and -not (Test-Path -LiteralPath $Path)) {
     throw "Safety-scan path does not exist: $Path"
 }
 
@@ -25,7 +27,8 @@ if ([string]::IsNullOrWhiteSpace($SettingsPath)) {
 
 # Keep this value as an array even when the scan target is one file.
 $Files = @(
-    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+    if ($ScanContent) { [pscustomobject]@{ FullName = '<candidate>' } }
+    elseif (Test-Path -LiteralPath $Path -PathType Leaf) {
         Get-Item -LiteralPath $Path
     }
     elseif (Test-Path -LiteralPath $Path -PathType Container) {
@@ -33,6 +36,7 @@ $Files = @(
             Where-Object {
                 $_.FullName -notmatch '[\\/]\.git([\\/]|$)' -and
                 $_.FullName -notmatch '[\\/]\.local([\\/]|$)' -and
+                $_.FullName -notmatch '[\\/]\.ai([\\/]|$)' -and
                 $_.Extension -notin @(
                     '.zip', '.7z', '.rar',
                     '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico',
@@ -97,7 +101,7 @@ $SecretPatterns = [ordered]@{
 $Findings = [System.Collections.Generic.List[object]]::new()
 
 foreach ($File in $Files) {
-    [string]$Content = Get-Content -LiteralPath $File.FullName -Raw -ErrorAction Stop
+    if (-not $ScanContent) { [string]$Content = Get-Content -LiteralPath $File.FullName -Raw -ErrorAction Stop }
 
     foreach ($Private in $PrivateLiterals) {
         if (
@@ -137,7 +141,7 @@ if ($Findings.Count -gt 0) {
     $Findings |
         Sort-Object File, Type -Unique |
         Format-Table -AutoSize
-    exit 1
+    throw 'Public-safety validation failed; sensitive values were not printed.'
 }
 
 Write-Host "Public-safety scan passed for $($Files.Count) file(s)."

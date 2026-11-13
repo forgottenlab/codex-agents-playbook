@@ -23,7 +23,7 @@ $Files = @(
         Get-Item -LiteralPath $Path
     }
     elseif (Test-Path -LiteralPath $Path -PathType Container) {
-        Get-ChildItem -LiteralPath $Path -Filter '*.ps1' -File -Recurse
+        Get-ChildItem -LiteralPath $Path -File -Recurse | Where-Object { $_.Extension -in @('.ps1', '.psm1') }
     }
     else {
         throw "Validation path is neither a file nor a directory: $Path"

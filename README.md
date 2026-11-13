@@ -1,192 +1,188 @@
 # Codex AGENTS Playbook
 
-> A safety-first, evidence-based collection of reusable `AGENTS.md` profiles, privacy-aware publishing tools, and local installation workflows for Codex.
+> Reusable Codex instruction profiles and a source-derived ChatGPT companion for a scoped, evidence-based engineering workflow.
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> This is a community-maintained project based on real development experience. It is not an official OpenAI project, an operating-system security boundary, or a substitute for reviewing commands and code changes.
+> Community-maintained and opinionated; not an official OpenAI project. Instructions do not provide a security sandbox or replace command review, platform permissions and backups.
 
 ## ✨ Why this project exists
 
-Codex can use `AGENTS.md` to understand how to navigate a repository, which commands to run, and which project practices to follow. A useful ruleset therefore needs more than tone preferences: it needs explicit scope, Git safety, validation evidence, privacy controls, durable project context, and a reliable handoff model.
+ChatGPT prepares a bounded task; Codex inspects the actual checkout, executes that task and returns evidence for review. Separating these responsibilities helps keep proposals distinct from repository facts, avoids turning simple commands into agent workflows, and makes continued work easier to review.
 
-This repository turns those concerns into three reusable profiles and a two-layer publishing workflow:
+These are workflow responsibilities, not changes to platform instruction priority. Codex can still plan the local steps needed to execute an authorized task.
 
-```text
-Private local source
-        ↓  sanitize and verify
-Public profile templates
-        ↓  configure and render
-User's installed AGENTS.md
-```
+## 🤝 Paired ChatGPT / Codex workflow
 
-The project does not claim to be a “magic prompt.” It is an opinionated operating playbook designed to make agent-assisted engineering more bounded, reviewable, evidence-based, and recoverable.
+| System | Owns |
+|---|---|
+| ChatGPT | Accuracy, conversation scope, Direct Shell / Codex routing, architecture discussion, model/reasoning recommendations, prompt design, cross-session planning and result review |
+| Codex | Repository inspection, scoped changes, context-dependent commands, worktree protection, tests, project fact isolation and concise factual handoff |
+
+Small deterministic commands normally stay in Direct Shell Mode: give the user a copyable command, purpose and expected result. Repository-dependent investigation, edits, worktree protection and test/fix/retest belong in Codex Task Mode. Keep simple commands inside a larger audit when splitting would harm safety or reproducibility.
+
+Model and reasoning recommendations stay **outside** the copyable execution prompt. They are choices for the user's UI; the prompt must not tell Codex to switch models.
+
+See the [paired workflow and 12-point consistency review](docs/PAIRED-WORKFLOW.md).
 
 ## 🚀 What is included
 
 | Component | Purpose |
 |---|---|
-| `profiles/minimal` | Essential scope, secret, Git, validation, and handoff safeguards |
-| `profiles/standard` | Recommended default with workspace, remote-operation, documentation, and compact `.ai` guidance |
-| `profiles/strict` | Complete workflow with authorization markers, detailed context governance, task history, and UI-history recovery |
-| `scripts/Initialize-LocalWorkspace.ps1` | Creates ignored local settings and a usable private source file |
-| `scripts/Install-CodexAgents.ps1` | Renders a selected profile and installs it with backup protection |
-| `scripts/New-PublicSnapshot.ps1` | Converts the private strict source into a sanitized public template |
-| `scripts/Test-PublicSafety.ps1` | Scans public files for configured private values and common credential patterns |
-| `scripts/Test-PowerShellSyntax.ps1` | Parses every PowerShell script without executing it |
-| `scripts/Test-Repository.ps1` | Runs syntax and public-safety validation together |
-| `scripts/Bootstrap-CodexAgents.ps1` | Clones or updates the repository, then invokes the visible local installer |
-| `.local/` | Ignored private values and the owner's local operational source; never commit it |
+| `profiles/minimal` | Essential scope, privacy, Git, validation and handoff safeguards |
+| `profiles/standard` | Recommended default with workspace, remote-operation, documentation and compact context guidance |
+| `profiles/strict` | Modular entry plus `personal-rules/` for routing, Git review, verification, context, history, recovery and handoff |
+| `chatgpt/custom-instructions.zh-CN.txt` | Plain, directly copyable instructions generated from the supplied ChatGPT source |
+| `scripts/Initialize-LocalWorkspace.ps1` | Creates ignored private settings and a rendered Strict source package |
+| `scripts/Install-CodexAgents.ps1` | Renders a profile and backs up every existing destination file before replacement |
+| `scripts/New-PublicSnapshot.ps1` | Sanitizes private Strict or ChatGPT inputs, checking all candidates before writing |
+| `scripts/Test-Repository.ps1` | Runs syntax, privacy, artifact and isolated workflow checks |
+| `scripts/Bootstrap-CodexAgents.ps1` | Visible clone/update and initialization flow; no pipe-to-shell execution |
+| `.local/` and `.ai/` | Ignored private inputs, test fixtures and local operational records |
 
-## 🌐 Why the canonical rules are in English
+The repository root `AGENTS.md` governs maintenance of this repository. Installable instructions live under `profiles/`.
 
-The installable rule layer is English because commands, paths, API identifiers, Git terms, error messages, and upstream engineering documentation are predominantly English. A single canonical rule language reduces drift and mixed-language ambiguity. Chinese documentation is maintained separately for explanation and onboarding.
+## 🌐 Rule language
 
-This is not a claim that English is inherently better for model behavior. Explicit authority, narrow scope, concrete constraints, and verifiable checks matter more than language alone.
+English is canonical for the installable Codex rules. User-facing explanations use the configured language. The ChatGPT companion preserves its supplied Simplified Chinese language. English and Chinese documentation explain the same setup and boundaries; language alone does not ensure reliable behavior.
 
-## 🧭 Profiles
+## 🧭 Profiles and personal choices
 
 | Profile | Best for | Main trade-off |
 |---|---|---|
-| Minimal | Small repositories, experiments, short tasks | Lowest overhead, limited continuity |
+| Minimal | Small repositories and short tasks | Least process, limited continuity |
 | Standard | Most personal and open-source projects | Balanced safety and context |
-| Strict | Long-running, risky, multi-stage, or recovery-sensitive work | More files, more process, more tokens |
+| Strict | Continuing, staged or recovery-sensitive work | More files and explicit module-reading duties |
 
-The repository root `AGENTS.md` contains maintenance instructions for this repository. End-user templates live under `profiles/`.
+Strict now installs an entry and eight supporting files. Modules are **not automatically imported by Markdown links**: the entry tells Codex when to read them with a file-reading tool. Missing required modules stop dependent work. `INDEX.md` is for humans and is not a mandatory execution step.
 
-## 📦 Quick start after cloning
+Workspace layout, Chinese explanations, the ChatGPT/Codex split, authorization markers, detailed history and the two-cycle repair budget in Strict are personal workflow choices. Review them before adopting them. Minimal and Standard retain their existing templates; they do not promise Strict's detailed routing and history rules.
 
-Requirements:
+## 📦 Install the Codex profile
 
-- Git
-- PowerShell 7.2 or newer
+Requirements: Git and PowerShell 7.2 or newer. Checks were executed with PowerShell 7.6.3; the minimum version was not separately tested.
 
 ```powershell
 git clone https://github.com/forgottenlab/codex-agents-playbook.git
 Set-Location .\codex-agents-playbook
-
 pwsh -NoProfile -File .\scripts\Initialize-LocalWorkspace.ps1
 ```
 
-The initializer asks for environment-specific values, writes them only under the ignored `.local/` directory, renders a private strict source, and can optionally install a selected profile globally.
+Initialize once. If `.local/user-settings.psd1` already exists, review and preserve it rather than rerunning with `-Force`. Initialization creates private inputs; it does not install global rules unless `-InstallGlobal` is explicitly supplied.
 
-To install later:
+Review paths, identity and language in the settings, then preview and install:
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
-  -Profile standard `
-  -SettingsPath .\.local\user-settings.psd1
+  -Profile strict -SettingsPath .\.local\user-settings.psd1 -WhatIf
+
+pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
+  -Profile strict -SettingsPath .\.local\user-settings.psd1
 ```
 
-The default target is:
+Choose `standard` for the recommended lighter default. The default target is `%USERPROFILE%\.codex\AGENTS.md`; use `-TargetPath` for another Codex home or a local preview. Strict's modules go into `personal-rules/` beside that target. Do not copy only the Strict entry.
+
+Existing files being replaced receive a shared timestamp-and-random-suffix backup. Unrelated files remain in place. Installation is a sequence of writes, not a transactional update; if interrupted, inspect the backups and restore the affected entry and modules as a set before retrying.
+
+Review any existing `AGENTS.override.md` and custom `CODEX_HOME`: they can change which global file is read. Start a new Codex session and verify the active instruction sources after installing. See [official instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+
+## 💬 Copy the ChatGPT instructions
+
+Open [custom-instructions.zh-CN.txt](chatgpt/custom-instructions.zh-CN.txt), select its entire contents and paste them into the ChatGPT custom-instructions field. Copy only the file contents. The file contains instructions without a surrounding explanation or code fence.
+
+The generator enforces this release's 5,000-character budget using conservative UTF-16 counting, including whitespace. The supplied source leaves room below that budget. Verify the field offered by your account; this repository does not test a live ChatGPT UI or change your account settings.
+
+Review the language, workflow and model-selection guidance before saving. The companion uses model capability categories rather than freezing a model catalog.
+
+## 🔐 Private source to public snapshot
 
 ```text
-%USERPROFILE%\.codex\AGENTS.md
+Installed/local Codex instructions       User-supplied ChatGPT instructions
+             ↓ copy/reconcile privately              ↓
+.local/AGENTS.source.md + personal-rules/    .local/chatgpt-custom-instructions.source.txt
+             ↓ sanitize and review                   ↓
+profiles/strict/ entry + modules           chatgpt/custom-instructions.zh-CN.txt
+             ↓ render
+User's local Codex installation
 ```
 
-An existing file is backed up before replacement.
-
-## 🔐 Private local source and public snapshot
-
-Machine paths and user-specific settings belong in:
-
-```text
-.local/user-settings.psd1
-.local/AGENTS.source.md
-```
-
-Both are ignored by Git. Never force-add `.local/`.
-
-After intentionally editing the private strict source, create a public sanitized snapshot:
+Keep machine values in `.local/user-settings.psd1`. Before reconciling an existing private source, back it up. Copy and review the installed entry **and its modules**; initialization alone renders the public template and does not discover installed changes.
 
 ```powershell
 pwsh -NoProfile -File .\scripts\New-PublicSnapshot.ps1
-pwsh -NoProfile -File .\scripts\Test-PublicSafety.ps1
-```
-
-Then review the exact diff:
-
-```powershell
-git status --short
-git diff -- profiles/strict/AGENTS.template.md
+pwsh -NoProfile -File .\scripts\New-PublicSnapshot.ps1 -Kind ChatGPT
+pwsh -NoProfile -File .\scripts\Test-Repository.ps1
 git diff --check
+git status --short
+git diff
+git diff --cached
 ```
 
-See [Privacy and sanitization](docs/PRIVACY-AND-SANITIZATION.md) for the complete placeholder map and manual replacement examples.
+Missing or empty ChatGPT input fails without replacing its public output. Generation removes presentation separators and Markdown heading syntax, normalizes line endings and sanitizes configured values; it does not invent active instructions. If privacy replacement leaves a placeholder in the copyable ChatGPT text, generation stops for manual review.
 
-## 🧩 Documented placeholders
+See [privacy and sanitization](docs/PRIVACY-AND-SANITIZATION.md) for the transformation boundary and private-source workflow.
 
-| Placeholder | User-specific value |
+## 🧩 Customization and placeholders
+
+| Placeholder | Setting |
 |---|---|
-| `{{WORKSPACE_ROOT}}` | Root directory used for Codex workspaces |
-| `{{PROJECTS_DIR}}` | Long-term project directory |
-| `{{AUTOMATIONS_DIR}}` | Automation project directory |
-| `{{SANDBOX_DIR}}` | Temporary experiment directory |
-| `{{ARCHIVED_DIR}}` | Archived project directory |
-| `{{TEMPLATES_DIR}}` | Reusable template directory |
-| `{{USER_PROFILE}}` | Current operating-system user profile |
-| `{{GITHUB_USERNAME}}` | GitHub username or organization name |
-| `{{PREFERRED_LANGUAGE}}` | Preferred user-facing explanation language |
+| `{{WORKSPACE_ROOT}}` | Workspace root |
+| `{{PROJECTS_DIR}}` | Long-term projects |
+| `{{AUTOMATIONS_DIR}}` | Persistent automation |
+| `{{SANDBOX_DIR}}` | Temporary experiments |
+| `{{ARCHIVED_DIR}}` | Archives |
+| `{{TEMPLATES_DIR}}` | Reusable templates |
+| `{{USER_PROFILE}}` | Current OS user profile, supplied by the installer |
+| `{{GITHUB_USERNAME}}` | GitHub identity, when used in a template |
+| `{{PREFERRED_LANGUAGE}}` | Language for user-facing explanations |
 
-Committed templates intentionally retain these placeholders. Installed local files must not.
+Use your own values in private settings, starting from [the example](examples/user-settings.example.psd1). Public Codex templates retain placeholders; rendered local files must contain none. The public repository URL identifies this project intentionally; downstream forks should review it. See [customization](docs/CUSTOMIZATION.md).
 
-## 🛡️ Authorization markers are not a sandbox
+## 🛡️ Authorization and privacy boundaries
 
-The strict profile can use markers such as `ALLOW_DEPLOY=true` as visible task-policy signals. They do not grant operating-system permissions, bypass the Codex sandbox, authenticate a user, or make a command safe. Platform permissions, the actual command, and the latest explicit user instruction must still be reviewed.
+Strict's `ALLOW_REMOTE_READONLY=true`, `ALLOW_REMOTE_VALIDATE=true`, `ALLOW_DEPLOY=true` and `ALLOW_SECRET_FILE_MOVE=true` are task-policy signals. They do not grant OS permissions, authenticate an account or override platform controls. A marker authorizes only its stated scope.
+
+Never publish `.local/`, `.ai/`, rendered private files, credentials, session files or private operational records. Regex scans cannot prove absence of personal data: independently review names, paths, hosts, email addresses, project references and links.
 
 ## 🧪 Validation
-
-Run the public-safety scan before every public commit that changes profiles, scripts, examples, or privacy documentation:
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Test-Repository.ps1
 ```
 
-The repository test first parses every PowerShell script, then runs the public-safety scan. The scan checks configured private literals when `.local/user-settings.psd1` exists and also detects common private-key and credential formats. It is a guardrail, not a complete secret-scanning product.
+The suite parses `.ps1` and `.psm1`, scans public files, checks documented placeholders, supporting modules, ChatGPT length and relative file links, then exercises installation and generation under ignored `.local/validation-*` fixtures. Fixtures are retained for review. Tests never install global rules or contact remote services.
+
+The consistency review is a human assessment recorded in [the paired workflow](docs/PAIRED-WORKFLOW.md); automated checks do not establish model compliance. External link availability, ChatGPT UI behavior, interrupted-install recovery and every filesystem failure mode are not integration-tested.
 
 ## 🧱 Repository layout
 
 ```text
 codex-agents-playbook/
-├─ AGENTS.md
-├─ README.md
-├─ README.zh-CN.md
-├─ LICENSE
-├─ CHANGELOG.md
-├─ SECURITY.md
-├─ CONTRIBUTING.md
+├─ AGENTS.md                     # repository maintenance rules
+├─ README.md / README.zh-CN.md
 ├─ profiles/
 │  ├─ minimal/AGENTS.template.md
 │  ├─ standard/AGENTS.template.md
-│  └─ strict/AGENTS.template.md
+│  └─ strict/
+│     ├─ AGENTS.template.md
+│     └─ personal-rules/
+├─ chatgpt/custom-instructions.zh-CN.txt
 ├─ scripts/
 ├─ examples/
 ├─ docs/
-└─ .local/                 # ignored, private, local only
+├─ .local/                       # ignored private source and fixtures
+└─ .ai/                          # ignored local continuity
 ```
 
 ## 🗺️ Roadmap
 
-- Scenario-based behavioral tests for each profile
-- macOS and Linux render/install scripts
-- Tagged bootstrap releases with checksums
-- Optional profile composition instead of full-file duplication
-- CI validation for placeholders, Markdown links, and sensitive literals
-- Versioned migration notes for installed local rules
-
-Roadmap items are proposals, not implementation promises.
+Scenario-based model behavior checks, macOS/Linux installers, tagged bootstrap checksums and versioned migration tooling remain possible future work. A roadmap does not authorize implementation.
 
 ## 🤝 Contributing
 
-A useful rule change should describe the observed failure mode, affected environment, proposed wording, trade-offs, and a way to validate behavior. Avoid adding rules only because they sound stricter; every rule consumes context and reduces flexibility.
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change.
+Read [CONTRIBUTING.md](CONTRIBUTING.md). Rule changes should identify an observed failure mode, cost and validation method. Keep changes focused and review public diffs before staging explicit files.
 
 ## 📜 License
 
 MIT License. See [LICENSE](LICENSE).
-
-## 🙏 Acknowledgements
-
-This playbook grew from repeated use of ChatGPT and Codex across local development, automation, documentation, Git workflows, testing, and long-running project recovery.

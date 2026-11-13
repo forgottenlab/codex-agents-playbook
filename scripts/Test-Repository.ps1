@@ -11,6 +11,8 @@ $PowerShellExecutable = (Get-Process -Id $PID -ErrorAction Stop).Path
 $Checks = @(
     'Test-PowerShellSyntax.ps1'
     'Test-PublicSafety.ps1'
+    'Test-InstructionArtifacts.ps1'
+    'Test-Workflows.ps1'
 )
 
 foreach ($Check in $Checks) {

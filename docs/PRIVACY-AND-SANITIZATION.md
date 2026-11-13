@@ -31,11 +31,15 @@ Templates under `profiles/` intentionally keep placeholders. Rendered local file
 ```text
 .local/user-settings.psd1
 .local/AGENTS.source.md
+.local/personal-rules/
+.local/chatgpt-custom-instructions.source.txt
 ```
 
 The repository `.gitignore` excludes `.local/`. Do not force-add it.
 
 ## 4. Initialize local values
+
+Initialize once, review and adjust the settings, then install in section 5. If `.local/user-settings.psd1` already exists, skip initialization and preserve it; do not use `-Force` just to follow this guide.
 
 Interactive:
 
@@ -49,45 +53,39 @@ Non-interactive example:
 pwsh -NoProfile -File .\scripts\Initialize-LocalWorkspace.ps1 `
   -WorkspaceRoot 'D:\Codex' `
   -GitHubUsername 'example-user' `
-  -PreferredLanguage 'Simplified Chinese' `
-  -Profile standard `
-  -InstallGlobal
+  -PreferredLanguage 'Simplified Chinese'
 ```
 
-## 5. Manual placeholder replacement
+Both examples create local settings and a private strict source under `.local/` without installing global instructions. Choose the global profile in section 5. Adding `-InstallGlobal` would install immediately through the same installer; it is intentionally omitted here to avoid installing twice.
 
-The supported installer is preferred, but the same transformation can be performed manually:
+## 5. Configure placeholder replacement and install safely
+
+Use the supported installer instead of writing directly to the global file. Manually edit `.local/user-settings.psd1` created in section 4, or create it from `examples/user-settings.example.psd1` if it does not exist. Preserve existing local settings. The file contains a PowerShell data hashtable such as:
 
 ```powershell
-$TemplatePath = '.\profiles\standard\AGENTS.template.md'
-$OutputPath = Join-Path $env:USERPROFILE '.codex\AGENTS.md'
-
-$WorkspaceRoot = 'D:\Codex'
-$Replacements = [ordered]@{
-    '{{WORKSPACE_ROOT}}'    = $WorkspaceRoot
-    '{{PROJECTS_DIR}}'      = Join-Path $WorkspaceRoot '01-Projects'
-    '{{AUTOMATIONS_DIR}}'   = Join-Path $WorkspaceRoot '02-Automations'
-    '{{SANDBOX_DIR}}'       = Join-Path $WorkspaceRoot '03-Sandbox'
-    '{{ARCHIVED_DIR}}'      = Join-Path $WorkspaceRoot '04-Archived'
-    '{{TEMPLATES_DIR}}'     = Join-Path $WorkspaceRoot '_templates'
-    '{{USER_PROFILE}}'      = $env:USERPROFILE
-    '{{GITHUB_USERNAME}}'   = 'example-user'
-    '{{PREFERRED_LANGUAGE}}'= 'Simplified Chinese'
+@{
+    WorkspaceRoot      = 'D:\Codex'
+    ProjectsDir        = 'D:\Codex\01-Projects'
+    AutomationsDir     = 'D:\Codex\02-Automations'
+    SandboxDir         = 'D:\Codex\03-Sandbox'
+    ArchivedDir        = 'D:\Codex\04-Archived'
+    TemplatesDir       = 'D:\Codex\_templates'
+    GitHubUsername     = 'example-user'
+    PreferredLanguage  = 'Simplified Chinese'
 }
-
-$Content = Get-Content -LiteralPath $TemplatePath -Raw
-foreach ($Entry in $Replacements.GetEnumerator()) {
-    $Content = $Content.Replace($Entry.Key, [string]$Entry.Value)
-}
-
-$Unresolved = [regex]::Matches($Content, '\{\{[A-Z0-9_]+\}\}') | ForEach-Object Value | Sort-Object -Unique
-if ($Unresolved) {
-    throw "Unresolved placeholders: $($Unresolved -join ', ')"
-}
-
-New-Item -ItemType Directory -Path (Split-Path -Parent $OutputPath) -Force | Out-Null
-Set-Content -LiteralPath $OutputPath -Value $Content -Encoding utf8
 ```
+
+Replace the example paths, GitHub identity, and language with your own values. Each directory can be customized independently; omitted or empty directory settings are derived from `WorkspaceRoot`. `WorkspaceRoot`, `GitHubUsername`, and `PreferredLanguage` must be present and non-empty. The installer obtains `{{USER_PROFILE}}` from `$env:USERPROFILE`. Keep private values in `.local/`, not in committed templates.
+
+Run from the repository root:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
+  -Profile standard `
+  -SettingsPath .\.local\user-settings.psd1
+```
+
+The default target is `%USERPROFILE%\.codex\AGENTS.md`. For another location, pass `-TargetPath` including a parent directory. The installer validates the entire rendered package and rejects unresolved placeholders before modifying targets. Strict installs the entry and eight supporting files under sibling `personal-rules/`. Every existing file being replaced is backed up with a common timestamp-and-random suffix before any install write; backup failure stops installation. Unrelated files are retained. Writes are sequential, not transactional: keep the affected entry/module backups together and restore that set after an interrupted install. Avoid concurrent installs; do not bypass the supported flow with direct overwrites.
 
 ## 6. Generate a public snapshot from the private source
 
@@ -115,3 +113,40 @@ Stage explicit public files. Never stage `.local/`.
 - Prompt-level authorization markers are not OS permissions or sandbox controls.
 - A local path is not necessarily a secret, but it is environment-specific and should not be imposed on downstream users.
 - Review generated diffs and use a dedicated secret scanner for high-risk repositories.
+
+## 9. Modular and ChatGPT publication review
+
+Keep the installed entry and its supporting modules as source inputs; never overwrite
+the installed global file during release preparation. Back up an existing ignored
+source before reconciling it. If no private source/settings exist, record that fact
+and establish them from verified inputs; do not claim an earlier source was backed up.
+
+The modular snapshot reads each required module relative to the private source.
+It replaces configured values, normalizes stale candidate/staging metadata and
+translates the human-only index. It also preserves Minimal's explicit prohibition
+on unauthorized history rewriting or branch deletion in the Strict Git module.
+This narrow profile-inheritance safeguard does not change the installed source.
+Review all generated modules, not just the entry.
+
+Generate the companion from the actual supplied text:
+
+```powershell
+pwsh -NoProfile -File .\scripts\New-PublicSnapshot.ps1 -Kind ChatGPT
+```
+
+No source means no generated companion. The generator removes presentation separators
+and heading markers, keeps the instructions in the supplied language, and checks the
+5,000-character release budget. It rejects empty/over-budget content, sensitive
+patterns and remaining placeholders before replacing any public output.
+
+The scanner accepts in-memory candidates for this pre-write check. Public scans
+exclude ignored `.local/` and `.ai/`; local task evidence must not be published.
+Check `git ls-files .local .ai` and the staged diff: ignored directories already
+tracked by mistake are still a publication blocker. Review personal names, profile
+paths, private project references, hostnames, email addresses and private links
+independently; configured-literal and regex scans are incomplete.
+
+Only source-derived instruction artifacts, reviewed tooling and documentation are
+publication candidates. Public project URLs are intentional project identity, not
+a downstream user's identity. Live account settings and private operational records
+are not release artifacts. See the [paired consistency review](PAIRED-WORKFLOW.md).
