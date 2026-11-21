@@ -14,6 +14,8 @@ Generation normalizes the installed entry's stale candidate title and staging-on
 
 ChatGPT determines conversation scope and prepares an authorized execution task. It discusses architecture, decomposes work, recommends model/reasoning settings outside the prompt, plans across sessions and reviews results.
 
+Before naming a Codex model, check current official model and product information. A release announcement establishes release status. Product support and the choices visible in the current account and client need separate evidence. Choose among available options by task fit, reasoning effort and usage cost. If current evidence is unavailable, state the uncertainty and recommend a capability level conditionally.
+
 Codex verifies local facts, makes scoped changes and provides command/test evidence. Its local execution plan does not take over conversation routing or long-term architecture ownership. The ChatGPT source's “architecture design” Codex trigger means repository-dependent inspection, feasibility checks or implementation work; a conceptual architecture discussion remains with ChatGPT and the user. Major decisions still require confirmation.
 
 A comparison with another project does not authorize inspecting or modifying it. A new independent implementation task should identify its repository explicitly.
@@ -61,6 +63,8 @@ Manual scenarios used for the rule review:
 - The same simple Git command inside an audit can be executed as evidence collection.
 - A project comparison keeps facts separate without automatically switching chats.
 - A full implementation prompt excludes model/reasoning UI settings.
+- A new release is announced, while the client's picker still shows only an older supported model. Check official product support and recommend the visible model if it fits the task and cost.
+- Current official information and the picker are unavailable. Identify both unknowns and give conditional capability and effort guidance outside the executable prompt.
 - A strict read-only task writes neither context nor history.
 - A missing required module stops dependent execution rather than silently loading another copy.
 
