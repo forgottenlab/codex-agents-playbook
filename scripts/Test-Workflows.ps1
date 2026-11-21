@@ -121,5 +121,101 @@ if ($LASTEXITCODE -ne 0) { throw "Relative-path workflow failed: $DriverOutput" 
 Assert-True (Test-Path (Join-Path $Fixture 'relative install/personal-rules/history.md')) 'Relative install escaped the PowerShell location.'
 Assert-True (Test-Path (Join-Path $Fixture 'relative generated/personal-rules/history.md')) 'Relative generation escaped the PowerShell location.'
 
+# Grok Strict uses the existing fixture runner and only fixture-owned homes.
+$GrokRoot = Join-Path $Fixture 'Grok home'
+$Installer = 'Install-CodexAgents.ps1'
+$GrokArgs = @('-Client','Grok','-Profile','strict','-SettingsPath',$Settings,'-TargetDirectory',$GrokRoot)
+$Entry = Join-Path $GrokRoot 'rules/playbook-entry.md'
+$Backups = Join-Path $GrokRoot 'playbook/backups'
+$GrokExecution = Join-Path $GrokRoot 'playbook/modules/execution.md'
+Invoke-Fixture $Installer ($GrokArgs + '-WhatIf') | Out-Null
+Assert-True (-not (Test-Path $GrokRoot)) 'Grok WhatIf created its home.'
+foreach ($BadProfile in @('minimal','standard')) {
+    Invoke-Fixture $Installer @('-Client','Grok','-Profile',$BadProfile,'-SettingsPath',$Settings,'-TargetDirectory',$GrokRoot) -ExpectFailure | Out-Null
+}
+Invoke-Fixture $Installer @('-Client','Codex','-TargetDirectory',$GrokRoot) -ExpectFailure | Out-Null
+Invoke-Fixture $Installer ($GrokArgs + @('-TargetPath',$Entry)) -ExpectFailure | Out-Null
+$SourceModule = Join-Path $Fixture 'profiles/strict/personal-rules/handoff.md'
+Rename-Item -LiteralPath $SourceModule -NewName 'handoff.held'
+Invoke-Fixture $Installer $GrokArgs -ExpectFailure | Out-Null
+Rename-Item -LiteralPath (Join-Path (Split-Path $SourceModule) 'handoff.held') -NewName 'handoff.md'
+$OriginalBody = [IO.File]::ReadAllText($SourceModule)
+[IO.File]::AppendAllText($SourceModule, '{{MISSING_SETTING}}')
+Invoke-Fixture $Installer $GrokArgs -ExpectFailure | Out-Null
+[IO.File]::WriteAllText($SourceModule, $OriginalBody)
+Assert-True (-not (Test-Path $GrokRoot)) 'Rejected Grok package created output.'
+
+$Keep = @('AGENTS.md','rules/custom.md','skills/sample/SKILL.md','config.toml','trusted_folders.toml')
+foreach ($File in $Keep) {
+    $Path = Join-Path $GrokRoot $File
+    [IO.Directory]::CreateDirectory((Split-Path $Path)) | Out-Null
+    [IO.File]::WriteAllText($Path, "fixture $File")
+}
+[IO.File]::WriteAllText($Entry, 'user-owned rule')
+Invoke-Fixture $Installer ($GrokArgs + '-Force') -ExpectFailure | Out-Null
+Assert-True ((Get-Content $Entry -Raw) -eq 'user-owned rule' -and -not (Test-Path $Backups)) 'Conflict backed up or replaced a user file.'
+Rename-Item -LiteralPath $Entry -NewName 'held.txt'
+if ($IsWindows) {
+    $Outside = Join-Path $Fixture 'outside-modules'
+    [IO.Directory]::CreateDirectory($Outside) | Out-Null
+    $LinkedHome = Join-Path $Fixture 'linked-home'
+    [IO.Directory]::CreateDirectory($LinkedHome) | Out-Null
+    New-Item -ItemType Junction -Path (Join-Path $LinkedHome 'playbook') -Target $Outside | Out-Null
+    Invoke-Fixture $Installer @('-Client','Grok','-Profile','strict','-SettingsPath',$Settings,'-TargetDirectory',$LinkedHome) -ExpectFailure | Out-Null
+    Assert-True (@(Get-ChildItem $Outside).Count -eq 0) 'Grok traversed a linked directory.'
+}
+Invoke-Fixture $Installer $GrokArgs | Out-Null
+$Batch = @(Get-ChildItem -LiteralPath $Backups -Directory)
+Assert-True ($Batch.Count -eq 1) 'First installation did not record its batch.'
+$FirstBatch = $Batch[0].Name
+$EntryBody = Get-Content $Entry -Raw
+foreach ($Name in @('execution','git-safety','verification','context','history','recovery','handoff')) {
+    $Relative = "../playbook/modules/$Name.md"
+    $InstalledBody = Get-Content (Join-Path (Split-Path $Entry) $Relative) -Raw
+    $CodexBody = Get-Content (Join-Path $Fixture ".local/personal-rules/$Name.md") -Raw
+    Assert-True ($EntryBody.Contains($Relative) -and $InstalledBody.StartsWith($CodexBody, [StringComparison]::Ordinal)) "Incomplete companion: $Name"
+}
+Assert-True (@(Get-ChildItem (Join-Path $GrokRoot 'rules') -Filter '*.md').Count -eq 2) 'Extra native Grok rules installed.'
+Assert-True (@(Get-ChildItem (Join-Path $GrokRoot 'playbook/modules') -File).Count -eq 7) 'Wrong companion inventory.'
+$OldTime = (Get-Item $Entry).LastWriteTimeUtc
+Invoke-Fixture $Installer $GrokArgs | Out-Null
+Assert-True ((Get-Item $Entry).LastWriteTimeUtc -eq $OldTime -and @(Get-ChildItem $Backups).Count -eq 1) 'Identical reinstall wrote files.'
+
+$ChangedSettings = Join-Path $Fixture 'changed-settings.psd1'
+$NewSettings = (Get-Content $Settings -Raw).Replace('private-root','alternative-root').Replace('Simplified Chinese','French')
+[IO.File]::WriteAllText($ChangedSettings, $NewSettings)
+$UpdateArgs = @('-Client','Grok','-Profile','strict','-SettingsPath',$ChangedSettings,'-TargetDirectory',$GrokRoot)
+$OldHash = (Get-FileHash $GrokExecution).Hash
+Invoke-Fixture $Installer ($UpdateArgs + '-WhatIf') | Out-Null
+Assert-True ((Get-FileHash $GrokExecution).Hash -eq $OldHash -and @(Get-ChildItem $Backups).Count -eq 1) 'Update preview wrote files.'
+if ($IsWindows) {
+    # Allow backup reads but deny replacement of the last file in this batch.
+    $Lock = [IO.File]::Open($Entry, 'Open','Read','Read')
+    try { $Failure = Invoke-Fixture $Installer $UpdateArgs -ExpectFailure }
+    finally { $Lock.Dispose() }
+    Assert-True ($Failure.Contains('Restore-GrokAgents.ps1') -and (Get-FileHash $GrokExecution).Hash -ne $OldHash) 'Missing partial-install recovery boundary.'
+} else { Invoke-Fixture $Installer $UpdateArgs | Out-Null }
+$UpdateBatch = Get-ChildItem $Backups -Directory | Where-Object Name -ne $FirstBatch
+$RestoreArgs = @('-TargetDirectory',$GrokRoot,'-Batch',$UpdateBatch.Name)
+$ChangedHash = (Get-FileHash $GrokExecution).Hash
+Invoke-Fixture 'Restore-GrokAgents.ps1' ($RestoreArgs + '-WhatIf') | Out-Null
+Assert-True ((Get-FileHash $GrokExecution).Hash -eq $ChangedHash) 'Restore preview changed a file.'
+$EditedBody = [IO.File]::ReadAllText($GrokExecution)
+[IO.File]::AppendAllText($GrokExecution, 'manual change')
+Invoke-Fixture 'Restore-GrokAgents.ps1' $RestoreArgs -ExpectFailure | Out-Null
+Invoke-Fixture $Installer $UpdateArgs -ExpectFailure | Out-Null
+Assert-True ((Get-Content $GrokExecution -Raw).EndsWith('manual change')) 'Manual change lost.'
+[IO.File]::WriteAllText($GrokExecution, $EditedBody)
+Invoke-Fixture 'Restore-GrokAgents.ps1' $RestoreArgs | Out-Null
+Assert-True ((Get-FileHash $GrokExecution).Hash -eq $OldHash -and (Get-Content $Entry -Raw) -ceq $EntryBody) 'Batch did not restore old package.'
+Invoke-Fixture $Installer $UpdateArgs | Out-Null
+Assert-True ((Get-Content $Entry -Raw).Contains('Use French')) 'Managed update did not enable new entry.'
+$Latest = Get-ChildItem $Backups -Directory | Where-Object { $_.Name -notin @($FirstBatch,$UpdateBatch.Name) }
+Invoke-Fixture 'Restore-GrokAgents.ps1' @('-TargetDirectory',$GrokRoot,'-Batch',$Latest.Name) | Out-Null
+Invoke-Fixture 'Restore-GrokAgents.ps1' @('-TargetDirectory',$GrokRoot,'-Batch',$FirstBatch) | Out-Null
+Assert-True (-not (Test-Path $Entry) -and @(Get-ChildItem (Join-Path $GrokRoot 'playbook/modules')).Count -eq 0) 'New files survived batch recovery.'
+foreach ($File in $Keep) { Assert-True ((Get-Content (Join-Path $GrokRoot $File) -Raw) -ceq "fixture $File") "Changed unrelated Grok file: $File" }
+Write-Host 'Grok Strict workflow passed: routes, content, guards, preview, repeat install, backups and batch recovery.'
+
 Write-Host 'Workflow checks passed: initialization, three profiles, module/entry backups, unrelated-file preservation, WhatIf, strict round-trip, empty/over-budget ChatGPT, secret rejection, placeholders, private-value rejection and relative paths with spaces.'
 Write-Host 'Fixtures retained under ignored .local/validation-*; no global installation or network operations.'

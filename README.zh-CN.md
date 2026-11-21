@@ -89,6 +89,17 @@ pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
 
 检查已有 `AGENTS.override.md` 及自定义 `CODEX_HOME`，它们会影响实际读取哪个全局文件。安装后启动新的 Codex 会话，核验有效指令来源。参见[官方指令发现说明](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
 
+## 安装 Grok Build 规则
+
+省略 `-Client` 时沿用 Codex 和默认的 Standard 档。Grok Build 目前只支持全局 Strict 布局。提供私有设置后，可先预览实际目标目录。
+
+```powershell
+pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
+  -Client Grok -Profile strict -SettingsPath .\.local\user-settings.psd1 -WhatIf
+```
+
+移除 `-WhatIf` 后执行安装。可用 `-TargetDirectory` 指定夹具或其他 Grok home，省略时先读取 `GROK_HOME`，再回退到用户的 `.grok` 目录。Grok 原生发现 `rules/playbook-entry.md`，七份详细模块位于 `playbook/modules/`，由入口提示按需读取。Skills、信任设置及用户自己的规则单独管理。每次有变更的安装都会在规则目录外记录恢复批次。详见[冲突与批次恢复](docs/CUSTOMIZATION.zh-CN.md#grok-strict-更新与恢复)。
+
 ## 💬 复制 ChatGPT 指令
 
 打开 [custom-instructions.zh-CN.txt](chatgpt/custom-instructions.zh-CN.txt)，全选文件内容并粘贴到 ChatGPT 自定义指令字段。只复制文件正文；文件没有外围说明或代码围栏。
@@ -155,7 +166,7 @@ pwsh -NoProfile -File .\scripts\Test-Repository.ps1
 
 验证套件解析 `.ps1` / `.psm1`，扫描公开文件，检查已记录占位符、配套模块、ChatGPT 长度和相对文件链接，然后在被忽略的 `.local/validation-*` 中验证安装与生成流程。测试夹具保留供审查。测试不会安装实际全局规则或访问远程服务。
 
-一致性结论是记录在[配套工作流](docs/PAIRED-WORKFLOW.zh-CN.md)中的人工判断，自动检查不能证明模型遵守规则。外部链接可用性、ChatGPT 界面行为、安装中断恢复和所有文件系统故障场景未做集成测试。
+一致性结论是记录在[配套工作流](docs/PAIRED-WORKFLOW.zh-CN.md)中的人工判断，自动检查不能证明模型遵守规则。Windows 夹具覆盖了 Grok 安装中断及批次恢复。外部链接可用性、ChatGPT 界面行为、Codex 安装中断及其他文件系统故障仍在此项验证范围之外。
 
 ## 🧱 仓库结构
 
@@ -164,6 +175,7 @@ codex-agents-playbook/
 ├─ AGENTS.md                     # 仓库维护规则
 ├─ README.md / README.zh-CN.md
 ├─ profiles/
+│  ├─ grok/strict/playbook-entry.md  # Grok 原生入口
 │  ├─ minimal/AGENTS.template.md
 │  ├─ standard/AGENTS.template.md
 │  └─ strict/

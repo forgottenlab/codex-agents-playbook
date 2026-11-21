@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Added explicit Grok Build Strict installation, with one native rule, seven on-demand companions, conflict checks and batch recovery. Codex remains the default client.
+
 - Source-derived, directly copyable ChatGPT companion with a 5000-character budget.
 - Bilingual paired-workflow guidance and a 12-point consistency review.
 - Artifact, link and isolated workflow validation; private local continuity is ignored.

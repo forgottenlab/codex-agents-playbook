@@ -20,6 +20,24 @@ These profiles are **alternative installation choices**, not three simultaneousl
 
 Do not use a global rule for a project-specific exception that belongs in the repository.
 
+## Grok Strict updates and recovery
+
+Use `-Client Grok -Profile strict -SettingsPath <settings>` with the installer. `-TargetDirectory` selects the Grok home, while `-TargetPath` selects a Codex entry file. Grok Minimal, Standard and project installs are unsupported. Bootstrap and initialization still target Codex.
+
+The installer renders the public Strict companions with your settings and checks all seven routes before writing. Each route is relative to `rules/playbook-entry.md`. To customize workflow text, edit the Grok entry template or the shared Strict module source in your checkout. Shared module edits also affect future Codex Strict renders. Keep private values in the settings file. Extra native Markdown rules belong in `rules/` and Skills have their own `skills/<name>/SKILL.md` layout. The installer only manages the playbook entry and its companions.
+
+Preview with `-WhatIf`. Identical files keep their timestamps. A same-name user file, a manually edited installed file or a linked destination stops installation before backup. Preserve a conflicting file separately and reconcile it yourself. The installer's content checksum detects edits. It is not a signature.
+
+For each changed run, `playbook/backups/<batch>/manifest.json` records relative paths and SHA-256 hashes before and after the change. The same directory holds copies of replaced files. Keep it private. Backup preparation precedes all instruction writes. A preparation failure may leave an incomplete backup directory. Once prepared, the installer writes modules first and publishes the entry last. An interruption can leave a mix of versions.
+
+Use the home and batch ID printed by the installer. Restore newer batches first. Preview the recovery, then run the same command without `-WhatIf` to apply it.
+
+```powershell
+.\scripts\Restore-GrokAgents.ps1 -TargetDirectory $grokDirectory -Batch $batchId -WhatIf
+```
+
+Recovery checks the batch before writing. It skips files already at their prior hash, restores replaced files and removes files created by the batch if their installed hashes still match. A later manual edit or damaged required backup stops recovery. Resolve the difference before retrying. Recovery can be resumed and leaves backups and directories in place.
+
 ## Values to review
 
 - Workspace paths

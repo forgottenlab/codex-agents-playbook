@@ -89,6 +89,17 @@ Existing files being replaced receive a shared timestamp-and-random-suffix backu
 
 Review any existing `AGENTS.override.md` and custom `CODEX_HOME`: they can change which global file is read. Start a new Codex session and verify the active instruction sources after installing. See [official instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
+## Install for Grok Build
+
+Omitting `-Client` selects Codex and its existing Standard default. Grok Build supports only the global Strict layout. Supply private settings and preview the resolved home before installing.
+
+```powershell
+pwsh -NoProfile -File .\scripts\Install-CodexAgents.ps1 `
+  -Client Grok -Profile strict -SettingsPath .\.local\user-settings.psd1 -WhatIf
+```
+
+Remove `-WhatIf` to install. Set `-TargetDirectory` to select a fixture or another Grok home. Otherwise the installer reads `GROK_HOME`, then falls back to the user's `.grok` directory. Grok loads `rules/playbook-entry.md` at discovery. Its seven companion files live in `playbook/modules/` and are read on demand. Skills, trust settings and existing user rules have independent lifecycles. Each changed installation records a recovery batch outside the rules directory. See [conflicts and batch recovery](docs/CUSTOMIZATION.md#grok-strict-updates-and-recovery).
+
 ## 💬 Copy the ChatGPT instructions
 
 Open [custom-instructions.zh-CN.txt](chatgpt/custom-instructions.zh-CN.txt), select its entire contents and paste them into the ChatGPT custom-instructions field. Copy only the file contents. The file contains instructions without a surrounding explanation or code fence.
@@ -155,7 +166,7 @@ pwsh -NoProfile -File .\scripts\Test-Repository.ps1
 
 The suite parses `.ps1` and `.psm1`, scans public files, checks documented placeholders, supporting modules, ChatGPT length and relative file links, then exercises installation and generation under ignored `.local/validation-*` fixtures. Fixtures are retained for review. Tests never install global rules or contact remote services.
 
-The consistency review is a human assessment recorded in [the paired workflow](docs/PAIRED-WORKFLOW.md); automated checks do not establish model compliance. External link availability, ChatGPT UI behavior, interrupted-install recovery and every filesystem failure mode are not integration-tested.
+The consistency review is a human assessment recorded in [the paired workflow](docs/PAIRED-WORKFLOW.md); automated checks do not establish model compliance. The Windows fixture exercises interrupted Grok installation and batch recovery. External link availability, ChatGPT UI behavior, interrupted Codex installation and other filesystem failures remain outside this check.
 
 ## 🧱 Repository layout
 
@@ -164,6 +175,7 @@ codex-agents-playbook/
 ├─ AGENTS.md                     # repository maintenance rules
 ├─ README.md / README.zh-CN.md
 ├─ profiles/
+│  ├─ grok/strict/playbook-entry.md  # Grok native entry
 │  ├─ minimal/AGENTS.template.md
 │  ├─ standard/AGENTS.template.md
 │  └─ strict/

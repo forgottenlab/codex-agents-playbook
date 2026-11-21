@@ -20,6 +20,24 @@ Minimal、Standard、Strict 是**互斥选择的安装档位**，不是同时生
 
 不要把只适用于某个项目的例外长期写入全局规则；它应归属于对应仓库。
 
+## Grok Strict 更新与恢复
+
+安装器使用 `-Client Grok -Profile strict -SettingsPath <settings>`。`-TargetDirectory` 指定 Grok home，`-TargetPath` 指定 Codex 入口文件。Grok 暂不支持 Minimal、Standard 或项目级安装。Bootstrap 和初始化脚本仍针对 Codex。
+
+安装器使用私有设置渲染公开 Strict 模块，并在写入前检查全部七条路由。每条路径相对于 `rules/playbook-entry.md`。定制工作流时可修改检出目录中的 Grok 入口模板或共享 Strict 模块源文件。修改共享模块也会影响以后渲染的 Codex Strict 产物。私人值保存在设置文件中。其他原生 Markdown 规则可以放在 `rules/`，Skills 单独使用 `skills/<name>/SKILL.md`。安装器只管理 playbook 入口及其配套模块。
+
+用 `-WhatIf` 可预览。内容相同的文件保留时间戳。遇到同名用户文件、手工改动的安装文件或链接目标时，安装会在备份之前停止。请先另存冲突文件并核对差异。内容校验和用于检测改动，不提供签名认证。
+
+有变更时，`playbook/backups/<batch>/manifest.json` 记录相对路径和变更前后的 SHA-256，同目录备份将被替换的旧文件。请将备份作为私有数据保存。备份准备阶段发生错误时，可能留下不完整的备份目录。准备成功后依次写入模块，最后替换入口。中断可能留下不同批次的文件。
+
+使用安装器显示的 home 和批次 ID，从最近的批次开始恢复。先预览，确认后移除 `-WhatIf` 执行。
+
+```powershell
+.\scripts\Restore-GrokAgents.ps1 -TargetDirectory $grokDirectory -Batch $batchId -WhatIf
+```
+
+恢复会先检查整批文件。已处于原状态的路径会跳过。校验通过后，还原被替换的文件，并移除本批新建且内容仍匹配的文件。遇到后来人工修改的文件或损坏的必需备份时，先处理差异再重试。恢复可接续执行，备份和目录保留。
+
 ## 至少检查这些内容
 
 - 工作区路径；

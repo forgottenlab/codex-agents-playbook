@@ -2,14 +2,33 @@
 param(
     [ValidateSet('minimal', 'standard', 'strict')] [string]$Profile = 'standard',
     [string]$SettingsPath,
-    [string]$TargetPath = (Join-Path $env:USERPROFILE '.codex/AGENTS.md'),
-    [switch]$Force
+    [string]$TargetPath,
+    [switch]$Force,
+    [Alias('Platform')] [ValidateSet('Codex','Grok')] [string]$Client = 'Codex',
+    [ValidateNotNullOrEmpty()] [string]$TargetDirectory
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'InstructionTools.psm1') -Force
 $RepoRoot = Split-Path -Parent $PSScriptRoot
+if ($Client -eq 'Grok') {
+    if ($Profile -ne 'strict') { throw 'Grok supports only -Profile strict.' }
+    if ($PSBoundParameters.ContainsKey('TargetPath')) { throw 'Use -TargetDirectory for Grok.' }
+    if ([string]::IsNullOrWhiteSpace($SettingsPath)) { throw 'Grok requires -SettingsPath.' }
+    if (-not $PSBoundParameters.ContainsKey('TargetDirectory')) {
+        $TargetDirectory = $env:GROK_HOME
+        if ([string]::IsNullOrWhiteSpace($TargetDirectory)) { $TargetDirectory = Join-Path $HOME '.grok' }
+    }
+    Import-Module (Join-Path $PSScriptRoot 'GrokInstaller.psm1') -Force
+    $Preview = @{ WhatIf = $WhatIfPreference }
+    if ($PSBoundParameters.ContainsKey('Confirm')) { $Preview.Confirm = $PSBoundParameters['Confirm'] }
+    Install-GrokStrict -TargetDirectory $TargetDirectory -ProfileRoot (Join-Path $RepoRoot 'profiles') `
+        -Replacements (Get-InstructionReplacements -SettingsPath $SettingsPath) @Preview
+    return
+}
+if ($PSBoundParameters.ContainsKey('TargetDirectory')) { throw 'Use -TargetPath for Codex.' }
+if (-not $PSBoundParameters.ContainsKey('TargetPath')) { $TargetPath = Join-Path $env:USERPROFILE '.codex/AGENTS.md' }
 $TemplatePath = Join-Path $RepoRoot "profiles/$Profile/AGENTS.template.md"
 if ([string]::IsNullOrWhiteSpace($SettingsPath)) {
     $DefaultWorkspace = if (Test-Path -LiteralPath 'D:\') { 'D:\Codex' } else { Join-Path $env:USERPROFILE 'Codex' }
